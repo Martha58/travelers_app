@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
 import time
 
 app = FastAPI()
@@ -16,7 +17,17 @@ class SearchRequest(BaseModel):
 
 @app.post("/search_hotels")
 def search_hotels(request: SearchRequest):
-    driver = webdriver.Edge()
+    options = options()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--start-maximized')
+    options.add_argument('--user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"')
+    driver = webdriver.Chrome(options=options)
+
+    # driver = webdriver.Edge()
     url = 'https://www.booking.com/'
     driver.get(url)
 
@@ -126,7 +137,11 @@ def search_hotels(request: SearchRequest):
             hotel_price.append(None)
 
         try:
+<<<<<<< HEAD
             link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "a78ca197d0")]') 
+=======
+            link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "a78ca197d0")]')  
+>>>>>>> 8303df3 (Docker update)
             link = link_element.get_attribute('href')
             if link and "booking.com" in link and link not in links:
                 links.add(link)
