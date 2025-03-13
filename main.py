@@ -137,11 +137,7 @@ def search_hotels(request: SearchRequest):
             hotel_price.append(None)
 
         try:
-<<<<<<< HEAD
             link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "a78ca197d0")]') 
-=======
-            link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "a78ca197d0")]')  
->>>>>>> 8303df3 (Docker update)
             link = link_element.get_attribute('href')
             if link and "booking.com" in link and link not in links:
                 links.add(link)
