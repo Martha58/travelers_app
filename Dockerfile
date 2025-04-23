@@ -1,41 +1,64 @@
 # Use a Python 3.10 base image
-FROM python:3.10
+FROM python:3.10-slim
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing \
-    chromium \
-    chromium-driver \
-    xvfb \
-    xauth \
+    apt-get install -y --no-install-recommends \
+    wget \
+    gnupg \
+    curl \
+    unzip \
     fonts-liberation \
-    fonts-ipafont-gothic \
-    fonts-wqy-zenhei \
-    fonts-thai-tlwg \
-    fonts-kacst \
-    fonts-freefont-ttf
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgtk-3-0 \
+    libgbm-dev \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV TZ=UTC \
-    LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8 \
-    DISPLAY=:99
+# Install Google Chrome
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
+# Install matching ChromeDriver
+# RUN set -ex && \
+#     CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1-3) && \
+#     echo "Detected Chrome version: $CHROME_VERSION" && \
+#     CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${135.0.7049.95}) && \
+#     echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION" && \
+#     curl -sSL "https://chromedriver.storage.googleapis.com/${135.0.7049.95}/chromedriver_linux64.zip" -o /tmp/chromedriver.zip && \
+#     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
+#     rm /tmp/chromedriver.zip && \
+#     chmod +x /usr/local/bin/chromedriver
+
+# Set environment variable for Chrome
+ENV CHROME_BIN=/usr/bin/google-chrome
+
+# Set work directory
 WORKDIR /app
 
-# Copy requirements.txt into the container
-COPY requirements.txt /app/
+# Copy dependencies
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
-    pip install --trusted-host pypi.org --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code into the container
-COPY . /app 
+# Copy application files
+COPY . .
 
-EXPOSE 8000
+# Expose port
+EXPOSE 8080
 
-# CMD ["uvicorn", "fastapi", "run", "python", "main.py", "--port", "8000"]
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start FastAPI with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+
