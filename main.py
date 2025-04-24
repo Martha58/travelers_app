@@ -17,7 +17,7 @@ class SearchRequest(BaseModel):
 
 @app.post("/search_hotels")
 def search_hotels(request: SearchRequest):
-    options = options()
+    options = Options()
     options.add_argument('--no-sandbox')
     options.add_argument('--headless')
     options.add_argument('--disable-dev-shm-usage')
@@ -30,6 +30,7 @@ def search_hotels(request: SearchRequest):
     # driver = webdriver.Edge()
     url = 'https://www.booking.com/'
     driver.get(url)
+    print("URL Loaded...")
 
     links = set()
     hotel_name = []
@@ -40,6 +41,7 @@ def search_hotels(request: SearchRequest):
     hotel_facilities = []
 
     # Enter location
+    print("Inputing location...")
     location_input = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '(//input[contains(@name, "ss")])[1]'))
     )
@@ -48,13 +50,15 @@ def search_hotels(request: SearchRequest):
     location_input.send_keys(request.location)
 
     # Select check-in and check-out dates
+    print("Inputing date...")
     date_picker = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '(//div[contains(@class, "f73e6603bf")])[1]'))
+        EC.presence_of_element_located((By.XPATH, './/button[contains(@data-testid, "searchbox-dates-container")]'))
     )
     date_picker.click()
 
     checkin_xpath = f'(//span[contains(@data-date, "{request.checkin_date}")])[1]'
     checkout_xpath = f'(//span[contains(@data-date, "{request.checkout_date}")])[1]'
+    print("Date inputted...")
 
     checkin_date = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, checkin_xpath))
@@ -84,9 +88,12 @@ def search_hotels(request: SearchRequest):
     # Scroll to load more hotels
     SCROLL_PAUSE_TIME = 3 
     scroll_count = 0 
-
-    container = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'd4924c9e74')))
-    last_height = driver.execute_script("return document.body.scrollHeight")
+    
+    try:
+        container = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'd4924c9e74')))
+        last_height = driver.execute_script("return document.body.scrollHeight")
+    except Exception as e:
+        print(f"Error: {e}")
 
     while True:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
