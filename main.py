@@ -55,26 +55,42 @@ def search_hotels(request: SearchRequest):
         EC.presence_of_element_located((By.XPATH, './/button[contains(@data-testid, "searchbox-dates-container")]'))
     )
     date_picker.click()
-
-    checkin_xpath = f'(//span[contains(@data-date, "{request.checkin_date}")])[1]'
-    checkout_xpath = f'(//span[contains(@data-date, "{request.checkout_date}")])[1]'
-    print("Date inputted...")
-
-    checkin_date = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, checkin_xpath))
-    )
-    driver.execute_script("arguments[0].click();", checkin_date)
-
-    checkout_date = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, checkout_xpath))
-    )
-    checkout_date.click()
+    
+    try:
+        checkin_xpath = f'(//span[contains(@data-date, "{request.checkin_date}")])[1]'
+        checkout_xpath = f'(//span[contains(@data-date, "{request.checkout_date}")])[1]'
+        # print("Date inputted...")
+    except Exception as e:
+        print("Date search failed, error: {e}")
+    try:
+        checkin_date = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, checkin_xpath))
+        )
+        driver.execute_script("arguments[0].click();", checkin_date)
+    except Exception as e:
+        print("Checkin failed, error: {e}")
+    
+    try:
+        checkout_date = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, checkout_xpath))
+        )
+        checkout_date.click()
+    except Exception as e:
+        print("Checkout failed, error: {e}")
 
     # Click search button
     search_button = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.XPATH, '(//button[contains(@type, "submit")])[1]'))
     )
     search_button.click()
+
+    # Take screenshot
+    try:
+        screenshot_path = '/workspace/travelers_app/screenshot.png'
+        driver.save_screenshot(screenshot_path)
+        print(f"Screenshot saved to {screenshot_path}")
+    except Exception as e:
+        print(f"Screenshot failed: {e}")
 
     # Dismiss sign-in popup if it appears
     try:
@@ -90,8 +106,13 @@ def search_hotels(request: SearchRequest):
     scroll_count = 0 
     
     try:
-        container = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'd4924c9e74')))
+        container = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, './/div[contains(@class, "d3ef0e3593 c7bdc96a10")]')))
+        print("Container found...")
+    except Exception as e:
+        print(f"Container not found: {e}")
+    try:
         last_height = driver.execute_script("return document.body.scrollHeight")
+        print("Returning to height...")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -100,9 +121,15 @@ def search_hotels(request: SearchRequest):
         scroll_count += 1  
         print(f"Scrolling {scroll_count}...")  
         time.sleep(SCROLL_PAUSE_TIME)
+        
+        try:
+            driver.save_screenshot('/workspace/travelers_app/image.png')
+            # print(screenshot)
+        except Exception as e:
+            print(f'Unable to take screeshot because of {e}')
 
         try:
-            load_more = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, '//button[contains(@class, "a83ed08757 c21c56c305 bf0537ecb5 ")]')))
+            load_more = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, './/div[contains(@class, "c3bdfd4ac2 a084498e74")]')))
             load_more.click()
             print("Clicked 'Load More' button.")  
             time.sleep(SCROLL_PAUSE_TIME)
@@ -122,13 +149,16 @@ def search_hotels(request: SearchRequest):
     time.sleep(2)
 
     # Extract hotel links
-    hotels = WebDriverWait(driver, 30).until(
-        EC.presence_of_all_elements_located((By.CLASS_NAME, 'c066246e13.d8aec464ca'))
-    )
+    try:
+        hotels = WebDriverWait(driver, 30).until(
+            EC.presence_of_all_elements_located((By.XPATH, ".//div[contains(@data-testid, 'property-card')]"))
+        )
+    except Exception as e:
+        print(f"Error: {e}")
 
     for hotel in hotels:
         try:
-            name = hotel.find_element(By.XPATH, './/div[contains(@class, "d6767e681c")]').text
+            name = hotel.find_element(By.XPATH, './/div[contains(@class, "b87c397a13 a3e0b4ffd1")]').text
             print(f'Hotel name: {name}')
             hotel_name.append(name)
         except Exception as e:
@@ -144,7 +174,7 @@ def search_hotels(request: SearchRequest):
             hotel_price.append(None)
 
         try:
-            link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "a78ca197d0")]') 
+            link_element = hotel.find_element(By.XPATH, './/a[contains(@class, "bd77474a8e")]') 
             link = link_element.get_attribute('href')
             if link and "booking.com" in link and link not in links:
                 links.add(link)
@@ -165,11 +195,11 @@ def search_hotels(request: SearchRequest):
         except Exception as e:
             print(f"No popup...")
         try:
-            rating = driver.find_element(By.XPATH, '(//div[contains(@class, "ac4a7896c7")])[5]').text
+            rating = driver.find_element(By.XPATH, '(//div[contains(@class, "f63b14ab7a dff2e52086")])[1]').text
         except Exception as e:
             rating = None
         try:
-            reviews = driver.find_element(By.XPATH, '(//div[contains(@class, "dc5041d860")])[3]').text   
+            reviews = driver.find_element(By.XPATH, '(//div[contains(@class, "fff1944c52 fb14de7f14 eaa8455879")])[3]').text   
         except Exception as e:
             reviews = None
         try:
@@ -177,7 +207,7 @@ def search_hotels(request: SearchRequest):
         except Exception as e:
             location = None
         try:
-            facilities = driver.find_element(By.XPATH, '(.//ul[contains(@class, "c807d72881 d1a624a1cc e10711a42e")])[1]').text
+            facilities = driver.find_element(By.XPATH, '(//ul[contains(@class, "e9f7361569 eb3a456445 b049f18dec")])[1]').text
         except Exception as e:
             facilities = None
 
